@@ -1,0 +1,314 @@
+<!doctype html><html lang='uk'><head><meta charset='utf-8'><title>Звіт ЛР3</title><style>
+@page { size: A4; margin: 20mm 15mm 20mm 30mm;
+  @bottom-center { content: counter(page); font: 12pt "Times New Roman", serif; } }
+@page :first { @bottom-center { content: none; } }
+html { background: #fff; }
+body { margin: 0; color: #000; background: #fff; font-family: "Times New Roman", serif;
+  font-size: 14pt; line-height: 1.22; }
+p { margin: 0 0 2pt; text-indent: 1.25cm; text-align: justify; }
+h1 { font-size: 14pt; text-align: center; margin: 10pt 0 5pt; break-after: avoid; }
+h2 { font-size: 14pt; margin: 6pt 0 3pt; text-indent: 1.25cm; break-after: avoid; }
+code { font-family: Consolas, "Courier New", monospace; font-size: 0.82em; }
+pre.code, pre.out { font-family: Consolas, "Courier New", monospace; font-size: 8.8pt;
+  line-height: 1.15; margin: 3pt 0 6pt; padding: 3pt 8pt; white-space: pre-wrap;
+  background: #f6f6f4; border-left: 3px solid #c3c2b7; orphans: 4; widows: 4; }
+pre.keep { break-inside: avoid; }
+pre.out { font-size: 8.2pt; background: #fbfbfa; border: 1px solid #c3c2b7; }
+table { width: 100%; border-collapse: collapse; font-size: 11pt; line-height: 1.15;
+  margin: 2pt 0 6pt; }
+th, td { border: 1px solid #000; padding: 2pt 5pt; vertical-align: top; text-align: left; }
+th { background: #f0efec; }
+table.num td { text-align: right; white-space: nowrap; }
+table.num td:first-child { text-align: left; }
+tr { break-inside: avoid; }
+.tcap { text-indent: 0; text-align: left; margin: 5pt 0 2pt; break-after: avoid; }
+.fcap { text-indent: 0; text-align: center; margin: 3pt 0 6pt; }
+.scheme { font-size: 10pt; line-height: 1.2; margin: 4pt 0 0; break-inside: avoid; }
+.scheme .row { display: flex; align-items: stretch; gap: 3pt; }
+.scheme .box { flex: 1 1 0; border: 1.2px solid #2a78d6; border-radius: 4px; padding: 3pt 4pt;
+  background: #f3f7fd; text-align: center; display: flex; flex-direction: column;
+  justify-content: center; }
+.scheme .box.wide { flex: 1.8 1 0; }
+.scheme .box b { font-size: 9.5pt; }
+.scheme .box code { font-size: 8.5pt; }
+.scheme .arr { align-self: center; font-size: 13pt; color: #52514e; }
+.scheme .down { text-align: center; color: #52514e; margin: 2pt 0; font-size: 9.5pt; }
+.title { height: 255mm; display: flex; flex-direction: column; justify-content: space-between;
+  text-align: center; break-after: page; line-height: 1.5; }
+.title .main { margin-top: 30mm; }
+.title .main .big { font-size: 20pt; font-weight: bold; letter-spacing: 2pt; }
+.title .main .theme { font-size: 16pt; font-weight: bold; margin-top: 10pt; }
+.title .sign { align-self: flex-end; text-align: left; width: 85mm; margin-top: 30mm; }
+.title .city { margin-top: auto; }
+</style></head><body>
+<section class="title">
+  <div>МІНІСТЕРСТВО ОСВІТИ І НАУКИ УКРАЇНИ<br>
+  Львівський національний університет імені Івана Франка</div>
+  <div class="main">
+    <div class="big">ЗВІТ</div>
+    <div>до лабораторної роботи №3</div>
+    <div>з дисципліни «Професійний Python»</div>
+    <div class="theme">Тема: «Ітератори, генератори та потокова обробка даних»</div>
+  </div>
+  <div class="sign">Виконав:<br>студент Левандівський Назар<br><br>
+  Перевірив:<br>Куньо Іван Михайлович</div>
+  <div class="city">Львів – 2026</div>
+</section>
+<h1>Мета роботи</h1>
+<p>Сформувати практичні навички роботи з ітераційною моделлю Python: iterable та iterator, власні iterator classes, generator functions, yield, yield from, generator expressions, модуль itertools, lazy evaluation та потокова обробка великих наборів даних із порівнянням eager і lazy підходів за часом і пам'яттю.</p>
+<h1>1. Постановка задачі</h1>
+<p><b>Варіант 1. Потокова обробка даних системи обліку студентів</b> (узгоджено з ЛР1–ЛР2). Вхід – CSV-журнал студентів <code>student_id,first_name,last_name,group,average_grade</code>. Потрібно побудувати lazy-конвеєр source → reading → cleaning → parsing → validation → filtering → transformation → aggregation/batching, обробити не менше 100 000 записів, порівняти eager і lazy варіанти та оцінити пам'ять.</p>
+<p class="tcap">Таблиця 1 – Вимоги варіанта 1 та їх реалізація (результат на data/input.csv)</p>
+<table class=""><thead><tr><th>Вимога</th><th>Реалізація</th><th>Результат</th></tr></thead><tbody><tr><td>streaming CSV reading та validation студентів</td><td><code>read_lines</code>, <code>validate_students</code></td><td>відсіяно 6 рядків із 25</td></tr><tr><td>фільтрація за групою та мін. середнім балом</td><td><code>filter_by_group</code>, <code>filter_by_min_grade</code></td><td>PI-22: 5 студентів; ≥ 90: 6 студентів</td></tr><tr><td>пошук за прізвищем або ID (lazy)</td><td><code>find_by_last_name</code>, <code>find_by_id</code></td><td>ID 3 знайдено після 11 рядків; «мельник» – 3 студенти</td></tr><tr><td>streaming average середнього бала</td><td><code>streaming_average</code>, <code>summarize</code></td><td>80.91</td></tr><tr><td>min/max без повної матеріалізації</td><td><code>min_max_grade</code></td><td>54.30 (Роман Лисак) / 98.40 (Ігор Романюк)</td></tr><tr><td>перші N студентів із найвищим балом за умовою</td><td><code>top_students</code> (heapq), <code>first_n_students</code> (islice)</td><td>Ігор Романюк, Оксана Мороз, Ірина Бондар</td></tr><tr><td>batch processing записів</td><td><code>Batcher</code>, <code>batched_by_group</code>, <code>batch_statistics</code></td><td>4 пакети по ≤ 5; 7 динамічних за групою</td></tr><tr><td>підрахунок студентів за групами</td><td><code>count_by_group</code>, <code>summarize</code></td><td>PI-21 – 6, PI-22 – 5, PI-23 – 5, PI-24 – 3</td></tr></tbody></table>
+<h1>2. Вхідні дані</h1>
+<p>Кожен рядок журналу – один студент. Правила validation: <code>student_id</code> – додатне ціле, ім'я та прізвище не порожні, <code>group</code> має формат <code>PI-21</code> (дві літери, дефіс, дві цифри), <code>average_grade</code> – скінченне число від 0 до 100. Причина кожного відхилення рахується в <code>Counter</code>: <code>bad_id</code>, <code>empty_name</code>, <code>bad_group</code>, <code>bad_grade</code>, <code>grade_out_of_range</code>.</p>
+<p>Демонстраційний файл <code>data/input.csv</code> містить коментар, порожній рядок і 25 записів, відсортованих за групами; серед них 6 навмисно некоректних. Для експерименту нескінченний генератор <code>random_students</code> створює журнал (≈1 % зіпсованих рядків), а <code>islice</code> обмежує його до 10 000 … 1 000 000 записів; <code>data/journal/</code> – той самий потік, розрізаний на 3 файли в підкаталогах.</p>
+<h1>3. Структура проєкту</h1>
+<pre class="code keep">Lab_03/
+├── pyproject.toml, README.md, .gitignore
+├── data/
+│   ├── input.csv           демонстраційний журнал студентів
+│   ├── journal/            журнал із 3 файлів у підкаталогах
+│   └── generated/          набори для експерименту (не в git)
+├── src/stream_processor/   __init__.py, analytics.py, batches.py, datagen.py
+│                           experiment.py, filters.py, main.py, models.py
+│                           parsers.py, pipeline.py, readers.py, transformations.py
+├── tests/                  test_analytics.py, test_stages.py
+├── results/                experiment.csv, early_termination.csv, …
+└── report/build_report.py  генератор цього звіту</pre>
+<h1>4. Iterable та iterator</h1>
+<p>Iterable – об'єкт, з якого <code>iter()</code> отримує iterator; iterator зберігає стан обходу, віддає елементи через <code>__next__()</code> і завершується <code>StopIteration</code>. Цикл <code>for</code> викликає <code>iter()</code>, потім <code>next()</code> до <code>StopIteration</code>. Власний iterator <code>Batcher</code> віддає пакети студентів; він one-shot (<code>iter(b) is b</code>). <code>JournalSource</code> – окремий iterable: кожен <code>iter()</code> створює новий генератор файлів, тому його можна обходити повторно.</p>
+<pre class="code">class Batcher(Generic[T]):
+    def __init__(self, items: Iterable[T], size: int) -&gt; None:
+        if size &lt; 1:
+            raise ValueError("Розмір пакета має бути &gt;= 1")
+        self._iterator = iter(items)
+        self._size = size
+
+    def __iter__(self) -&gt; "Batcher[T]":
+        return self
+
+    def __next__(self) -&gt; list[T]:
+        batch = list(islice(self._iterator, self._size))
+        if not batch:
+            raise StopIteration
+        return batch
+
+class JournalSource:
+    def __init__(self, root: Path) -&gt; None:
+        self.root = root
+
+    def __iter__(self) -&gt; Iterator[Path]:
+        return iter_csv_files(self.root)</pre>
+<h1>5. Генератори, yield і yield from</h1>
+<p>Streaming reader і рекурсивний пошук файлів використовують <code>yield from</code>; файл відкритий, доки генератор не вичерпано або не закрито:</p>
+<pre class="code keep">def read_lines(path: Path) -&gt; Iterator[str]:
+    with path.open("r", encoding="utf-8-sig", newline="") as file:
+        yield from file
+
+def iter_csv_files(root: Path) -&gt; Iterator[Path]:
+    for entry in sorted(root.iterdir()):
+        if entry.is_dir():
+            yield from iter_csv_files(entry)
+        elif entry.suffix == ".csv":
+            yield entry</pre>
+<p>Transformation stage – generator function з <code>yield</code>: кожен студент отримує поле <code>level</code> (рівень успішності) лише тоді, коли його запитує наступний етап. Етап не має власного стану, тому пам'ять не залежить від кількості студентів:</p>
+<pre class="code keep">def grade_level(grade: float) -&gt; str:
+    return next(label for threshold, label in GRADE_LEVELS if grade &gt;= threshold)
+
+def enrich_students(students: Iterable[Student]) -&gt; Iterator[StudentRecord]:
+    for student in students:
+        yield StudentRecord(*student, level=grade_level(student.average_grade))</pre>
+<p>Generator expressions використано у <code>build_pipeline</code> (<code>read_rows(path) for path in files</code>), <code>find_first</code>, <code>first_n_students</code>, <code>top_students</code> і <code>running_average</code>.</p>
+<p class="tcap">Таблиця 2 – Використані засоби itertools</p>
+<table class=""><thead><tr><th>Засіб</th><th>Де використано</th><th>Призначення</th></tr></thead><tbody><tr><td><code>islice</code></td><td><code>Batcher</code>, <code>first_n_students</code>, datagen</td><td>пакети, перші N, обмеження нескінченного потоку</td></tr><tr><td><code>chain.from_iterable</code></td><td><code>build_pipeline</code></td><td>один потік із кількох файлів</td></tr><tr><td><code>accumulate</code></td><td><code>running_average</code></td><td>накопичене середнє після кожного студента</td></tr><tr><td><code>groupby</code></td><td><code>batched_by_group</code>, <code>batch_statistics</code></td><td>пакети за групою; статистика пакета (після sorted)</td></tr><tr><td><code>count</code></td><td><code>random_students</code></td><td>ідентифікатори студентів</td></tr><tr><td><code>takewhile</code></td><td><code>main</code></td><td>студенти до першого з балом &lt; 60</td></tr></tbody></table>
+<h1>6. Lazy pipeline</h1>
+
+<div class="scheme">
+  <div class="row">
+    <div class="box"><b>Source</b><code>data/*.csv</code><code>JournalSource</code></div>
+    <div class="arr">→</div>
+    <div class="box"><b>Читання</b><code>read_lines</code></div>
+    <div class="arr">→</div>
+    <div class="box"><b>Очищення</b><code>clean_lines</code></div>
+    <div class="arr">→</div>
+    <div class="box"><b>Parsing</b><code>parse_rows</code></div>
+    <div class="arr">→</div>
+    <div class="box"><b>Validation</b><code>validate_students</code></div>
+  </div>
+  <div class="down">↓ chain.from_iterable об'єднує файли;
+    log_stage рахує записи на кожному етапі</div>
+  <div class="row">
+    <div class="box"><b>Filtering</b><code>filter_by_group</code></div>
+    <div class="arr">→</div>
+    <div class="box"><b>Filtering</b><code>filter_by_min_grade</code></div>
+    <div class="arr">→</div>
+    <div class="box"><b>Transformation</b><code>enrich_students</code></div>
+    <div class="arr">→</div>
+    <div class="box wide"><b>Aggregation / batching / sink</b>
+      <code>summarize · running_average · top_students</code>
+      <code>Batcher · batch_statistics · export_csv</code></div>
+  </div>
+</div>
+<p class="fcap">Рисунок 1 – Схема потокового конвеєра</p>
+<p>Функція <code>build_pipeline</code> лише з'єднує генератори – жоден рядок не читається, доки результат не почне споживати sink:</p>
+<pre class="code keep">def build_pipeline(
+    paths: Path | Iterable[Path],
+    *,
+    group: str | None = None,
+    min_grade: float | None = None,
+    errors: Counter[str] | None = None,
+    stages: Counter[str] | None = None,
+) -&gt; Iterator[StudentRecord]:
+    files = [paths] if isinstance(paths, Path) else paths
+    rows = chain.from_iterable(read_rows(path, stages) for path in files)
+    students = log_stage("4 validate", validate_students(rows, errors), stages)
+    if group is not None:
+        students = log_stage("5 filter group", filter_by_group(students, group), stages)
+    if min_grade is not None:
+        students = log_stage("6 filter grade", filter_by_min_grade(students, min_grade), stages)
+    return iter(log_stage("7 transform", enrich_students(students), stages))</pre>
+<p>Validation, filtering, топ-N, streaming aggregation і динамічні пакети. <code>nlargest</code> тримає в пам'яті лише N кандидатів, а не весь потік:</p>
+<pre class="code">def validate_students(
+    rows: Iterable[dict[str, str]],
+    errors: Counter[str] | None = None,
+) -&gt; Iterator[Student]:
+    for row in rows:
+        result = parse_student(row)
+        if isinstance(result, str):
+            if errors is not None:
+                errors[result] += 1
+            continue
+        yield result
+
+def filter_by_min_grade(students: Iterable[Student], minimum: float) -&gt; Iterator[Student]:
+    for student in students:
+        if student.average_grade &gt;= minimum:
+            yield student
+
+def top_students(
+    records: Iterable[StudentRecord],
+    n: int,
+    predicate: Callable[[StudentRecord], bool] | None = None,
+) -&gt; list[StudentRecord]:
+    candidates = records if predicate is None else (r for r in records if predicate(r))
+    return nlargest(n, candidates, key=attrgetter("average_grade"))
+
+def streaming_average(values: Iterable[float]) -&gt; float:
+    total = 0.0
+    count = 0
+    for value in values:
+        total += value
+        count += 1
+    if count == 0:
+        return 0.0
+    return round(total / count, 2)
+
+def running_average(records: Iterable[StudentRecord]) -&gt; Iterator[float]:
+    grades = (record.average_grade for record in records)
+    return (round(total / n, 2) for n, total in enumerate(accumulate(grades), 1))
+
+def batched_by_group(
+    records: Iterable[StudentRecord],
+    max_size: int = 100,
+) -&gt; Iterator[list[StudentRecord]]:
+    for _, members in groupby(records, key=attrgetter("group")):
+        yield from Batcher(members, max_size)</pre>
+<h1>7. Результат роботи програми</h1>
+<p>Вивід <code>python -m stream_processor.main</code>:</p>
+<pre class="out">ЛР3, варіант 1: потокова обробка даних системи обліку студентів
+
+Етапи конвеєра (скільки записів пройшло):
+  1 read=28, 2 clean=26, 3 parse=25, 4 validate=19, 7 transform=19
+Відхилено під час validation: 6 {'bad_id': 1, 'empty_name': 1, 'bad_group': 2, 'bad_grade': 1, 'grade_out_of_range': 1}
+
+Оброблені студенти (input.csv):
+    1 Анна Коваль            PI-21   91.50  відмінно
+    2 Олег Мельник           PI-21   84.00  добре
+    4 Андрій Шевченко        PI-21   88.70  добре
+   10 Максим Мельник         PI-21   70.60  задовільно
+   14 Юлія Кравець           PI-21   89.90  добре
+   17 Роман Лисак            PI-21   54.30  незадовільно
+    3 Ірина Бондар           PI-22   95.20  відмінно
+    5 Марія Бойко            PI-22   79.30  добре
+    7 Софія Гнатюк           PI-22   66.80  задовільно
+   13 Назар Савчук           PI-22   61.20  задовільно
+   19 Ігор Романюк           PI-22   98.40  відмінно
+    6 Тарас Гриценко         PI-23   72.40  задовільно
+    8 Дмитро Ткаченко        PI-23   58.90  незадовільно
+    9 Катерина Лисенко       PI-23   93.10  відмінно
+   15 Богдан Ткачук          PI-23   77.50  добре
+   18 Вікторія Бондаренко    PI-23   83.10  добре
+   11 Василь Петренко        PI-24   85.40  добре
+   12 Оксана Мороз           PI-24   97.00  відмінно
+   16 Лілія Мельник          PI-24   90.00  відмінно
+
+Фільтр за групою PI-22:
+    3 Ірина Бондар           PI-22   95.20  відмінно
+    5 Марія Бойко            PI-22   79.30  добре
+    7 Софія Гнатюк           PI-22   66.80  задовільно
+   13 Назар Савчук           PI-22   61.20  задовільно
+   19 Ігор Романюк           PI-22   98.40  відмінно
+
+Фільтр average_grade &gt;= 90: [1, 3, 19, 9, 12, 16]
+Група PI-21 і average_grade &gt;= 85: ['Анна Коваль', 'Андрій Шевченко', 'Юлія Кравець']
+
+Пошук за ID 3: Ірина Бондар, PI-22; прочитано рядків: 11 (early termination)
+Пошук за прізвищем 'мельник' (lazy generator): ['Олег Мельник', 'Максим Мельник', 'Лілія Мельник']
+  перший збіг Олег Мельник знайдено після 4 рядків
+
+Агрегація (summarize, один прохід):
+  студентів 19, середній бал 80.91
+  мінімум 54.30, максимум 98.40, найкращий: Ігор Романюк
+  за групами: {'PI-21': 6, 'PI-22': 5, 'PI-23': 5, 'PI-24': 3}
+  середній бал за групами: {'PI-21': 79.83, 'PI-22': 80.18, 'PI-23': 77.0, 'PI-24': 90.8}
+streaming_average без list: 80.91
+min_max_grade: мінімум Роман Лисак 54.3,
+               максимум Ігор Романюк 98.4
+count_by_group (Counter): {'PI-21': 6, 'PI-22': 5, 'PI-23': 5, 'PI-24': 3}
+Накопичене середнє (accumulate): [91.5, 87.75, 88.07] ... 80.91
+takewhile: студентів до першого з балом &lt; 60 - 5
+
+Топ-3 за балом (heapq.nlargest, пам'ять O(N)): ['Ігор Романюк', 'Оксана Мороз', 'Ірина Бондар']
+Топ-2 у групі PI-21: ['Анна Коваль', 'Юлія Кравець']
+Перші 4 студенти з балом &gt;= 85 (islice): [1, 4, 14, 3]
+
+Batch processing (Batcher, size=5) і статистика пакета (groupby):
+  пакет 1: студентів 5, {'PI-21': (5, 84.94)}
+  пакет 2: студентів 5, {'PI-21': (1, 54.3), 'PI-22': (4, 75.62)}
+  пакет 3: студентів 5, {'PI-22': (1, 98.4), 'PI-23': (4, 75.47)}
+  пакет 4: студентів 4, {'PI-23': (1, 83.1), 'PI-24': (3, 90.8)}
+Динамічні пакети за групою (max_size=4): розміри [4, 2, 4, 1, 4, 1, 3]
+
+Журнал із кількох файлів (рекурсивний yield from): 3 файли, повторний обхід дає 3
+  chain: 693 студентів, середній бал 69.83, некоректних рядків 7
+  за групами: {'PI-21': 136, 'PI-22': 160, 'PI-23': 134, 'PI-24': 120, 'PI-25': 143}
+
+Нескінченний генератор + islice(..., 2):
+  1,Ірина,Ткаченко,PI-21,55.30
+  2,Катерина,Гриценко,PI-24,87.32
+Streaming export відмінників: 6 -&gt; results\excellent_students.csv</pre>
+<p>Ручна перевірка: суми балів за групами 479.0 + 400.9 + 385.0 + 272.4 = 1 537.3; 1 537.3 / 19 = 80.91, що збігається з <code>summarize</code> і <code>streaming_average</code>; жоден бал не виходить за межі 0–100.</p>
+<h1>8. Eager і lazy: експеримент</h1>
+<p>Eager-версія повністю матеріалізує кожен етап у list; lazy-версія – це <code>build_pipeline</code>. Обидві використовують ту саму функцію перевірки <code>parse_student</code> і дають однаковий Summary (перевіряється assert). Час – найкращий із 2–3 запусків без tracemalloc, пам'ять – пік tracemalloc в окремому запуску, sink – <code>summarize</code>.</p>
+<pre class="code keep">def eager_process(path: Path) -&gt; list[StudentRecord]:
+    lines = path.read_text(encoding="utf-8-sig").splitlines()
+    cleaned = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
+    rows = list(csv.DictReader(cleaned))
+    parsed = [parse_student(row) for row in rows]
+    students = [item for item in parsed if isinstance(item, Student)]
+    return [StudentRecord(*s, level=grade_level(s.average_grade)) for s in students]</pre>
+<p class="tcap">Таблиця 3 – Elapsed time повної обробки</p>
+<table class="num"><thead><tr><th>Records</th><th>Eager time, с</th><th>Lazy time, с</th><th>Lazy / eager</th></tr></thead><tbody><tr><td>10 000</td><td>0.032</td><td>0.037</td><td>1.14</td></tr><tr><td>100 000</td><td>0.380</td><td>0.356</td><td>0.94</td></tr><tr><td>500 000</td><td>2.286</td><td>1.808</td><td>0.79</td></tr></tbody></table>
+<p class="tcap">Таблиця 4 – Peak memory і time to first result</p>
+<table class="num"><thead><tr><th>Records</th><th>Eager peak, МБ</th><th>Lazy peak, МБ</th><th>Eager / lazy</th><th>1-й результат eager, с</th><th>1-й результат lazy, мс</th></tr></thead><tbody><tr><td>10 000</td><td>8.3</td><td>0.07</td><td>111</td><td>0.031</td><td>0.149</td></tr><tr><td>100 000</td><td>82.6</td><td>0.07</td><td>1 109</td><td>0.359</td><td>0.189</td></tr><tr><td>500 000</td><td>415.1</td><td>0.07</td><td>5 563</td><td>2.108</td><td>0.155</td></tr></tbody></table>
+<p class="tcap">Таблиця 5 – Early termination: перший студент групи PI-25 з балом ≥ 99.97 (1 000 000 записів)</p>
+<table class="num"><thead><tr><th>Варіант</th><th>Час</th><th>Peak memory</th></tr></thead><tbody><tr><td>eager (повний filtered list, потім [0])</td><td>4.479 с</td><td>831.3 МБ</td></tr><tr><td>lazy (<code>find_first</code>)</td><td>3.380 мс</td><td>75.3 КБ</td></tr></tbody></table>
+<p><b>Аналіз.</b> Пікова пам'ять eager росте лінійно з кількістю записів (8.3 → 415.1 МБ), а lazy залишається ≈0.07 МБ (буфер читання, поточний запис і лічильники) – у 5 563 рази менше на 500 000 записів. За загальним часом на 10 000 записів lazy повільніший (lazy/eager = 1.14), на 500 000 записів – швидший (lazy/eager = 0.79): обидві версії виконують ту саму обчислювальну роботу, тож різниця в часі невелика; найімовірніше, її дають виділення й звільнення пам'яті під проміжні списки в eager-версії. Тому висновок «generator завжди швидший» неправильний: його головні переваги – пам'ять і перший результат, який lazy-конвеєр дає за 0.16 мс проти 2.11 с. Early termination на 1 000 000 записах знаходить збіг на позиції 651, прочитавши лише початок файла, – у 1 325 разів швидше і з 75 КБ пам'яті замість 831 МБ.</p>
+<p>Недоліки lazy-підходу: конвеєр one-shot (для другого проходу його треба створити заново), немає <code>len()</code> та індексації, помилки даних виникають під час споживання, а файл залишається відкритим, доки генератор не завершено. Eager доцільний для невеликих наборів із повторним доступом і сортуванням; lazy – для великих файлів, потоків і пошуку з ранньою зупинкою.</p>
+<h1>9. Перевірка правильності</h1>
+<p>Тести (<code>tests/</code>, unittest) перевіряють протокол iterator, BOM, рекурсивний пошук файлів, кожну причину відхилення та граничні значення балу, лінивість генератора, early termination, топ-N із рівними балами, пакети, eager = lazy, узгодженість згенерованих даних, експорт і те, що lazy займає щонайменше в 10 разів менше пам'яті. Пакет встановлюється командою <code>pip install -e .</code> у чисте venv.</p>
+<p class="tcap">Таблиця 6 – Результати перевірок</p>
+<table class=""><thead><tr><th>Перевірка</th><th>Результат</th></tr></thead><tbody><tr><td><code>python -m unittest discover -s tests</code></td><td>Ran 33 tests in 1.141s — OK</td></tr><tr><td><code>ruff check src tests</code></td><td>All checks passed!</td></tr><tr><td><code>ruff format --check src tests</code></td><td>14 files already formatted</td></tr><tr><td><code>mypy src tests</code></td><td>Success: no issues found in 14 source files</td></tr></tbody></table>
+<h1>Висновки</h1>
+<p>Побудовано потоковий конвеєр обробки журналу студентів (варіант 1), у якому кожен запис проходить етапи читання, очищення, parsing, validation, filtering, transformation і aggregation лише тоді, коли його запитує споживач. Використано власний iterator, окремий iterable, generator functions, yield from (зокрема рекурсивний), generator expressions і шість засобів itertools, а також <code>heapq.nlargest</code> для топ-N. Експеримент показав, що lazy-обробка тримає пам'ять сталою і дає перший результат майже миттєво, тоді як eager потребує пам'яті, пропорційної розміру файла; за загальним часом різниця невелика й залежить від обсягу даних. Тож вибір між eager і lazy залежить від обсягу даних і способу їх використання.</p></body></html>
