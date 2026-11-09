@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "student-stream-processor"
+version = "0.3.0"
+description = "Laboratory work 3 (Professional Python): streaming processing of student records"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Nazar Levandivskyi" }]
+
+[project.scripts]
+student-stream = "stream_processor.main:main"
+student-stream-generate = "stream_processor.datagen:main"
+student-stream-experiment = "stream_processor.experiment:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"report/*" = ["E402", "E501"]
